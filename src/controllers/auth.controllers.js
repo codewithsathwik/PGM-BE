@@ -74,5 +74,52 @@ const register = asyncHandlers(async (req, res) => {
         );
 });
 
-export default register;
+const login = asyncHandlers(async (req,res) => {
+    const {email, password} = req.body;
+
+    if(!email){
+        throw new ApiError(400,"Email is required");
+    }
+
+    const user = await User.findOne({email});
+
+    if(!user){
+        throw new ApiError(400,"User not exist");
+    }
+
+    const isPasswordCorrect = await user.isPasswordCorrect(password);
+
+    if(!isPasswordCorrect){
+        throw new ApiError(400,"Invalid password");
+    }
+
+    const {accessToken,refreshToken} = await generateAccessAndRefreshTokens(user._id);
+
+    const loginUser = await User.findById(user._id).select(
+        "-password -refreshToken -emailVerificationToken -emailVerificationExpiry",
+    );
+
+    const options = {
+        httpOnly : true,
+        secure : true
+    }
+
+    return res
+        .status(200)
+        .cookie("accessToken",accessToken,options)
+        .cookie("refreshToken",refreshToken,options)
+        .json(
+            new ApiResponse(
+                200,
+                {
+                    user : loginUser,
+                    accessToken,
+                    refreshToken
+                },
+                "User logged in successfully"
+            )
+        )
+})
+
+export {register, login};
 
