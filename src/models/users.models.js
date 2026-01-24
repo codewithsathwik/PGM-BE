@@ -70,6 +70,7 @@ const userSchema = new Schema(
 //     next();
 // });
 
+
 userSchema.pre("save", function () {
     if (!this.isModified("password")) return;
     this.password = bcrypt.hashSync(this.password, 10);
@@ -113,5 +114,6 @@ userSchema.methods.generateTemporaryToken = function () {
     const tokenExpiry = Date.now() + (20 * 60 * 1000) //20 mins
     return { unHashedToken, hashedToken, tokenExpiry }
 };
+
 
 export const User = mongoose.model("User", userSchema);
